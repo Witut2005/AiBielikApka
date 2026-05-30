@@ -43,4 +43,16 @@ export class SuggestionService {
       })
     );
   }
+
+  predictPartnerReaction(messages: any[]): Observable<{suggestion: string}> {
+    const apiUrl = 'http://localhost:5000/api/predict-reaction';
+    const history = messages.map(m => ({ sender: m.sender, text: m.text }));
+    
+    return this.http.post<{suggestion: string}>(apiUrl, { messages: history }).pipe(
+      catchError(error => {
+        console.error('Błąd przewidywania reakcji:', error);
+        return of({ suggestion: 'Błąd generowania sugestii.' });
+      })
+    );
+  }
 }

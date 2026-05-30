@@ -35,6 +35,9 @@ export class ChatComponent {
   
   suggestions = signal<Suggestion[]>([]);
   isSuggesting = signal<boolean>(false);
+  
+  partnerSuggestion = signal<string | null>(null);
+  isPredicting = signal<boolean>(false);
 
   newMessage = '';
   selectedAnalysis = signal<AnalysisData | null>(null);
@@ -103,6 +106,15 @@ export class ChatComponent {
     this.suggestions.set([]);
   }
 
+  usePartnerSuggestion() {
+    const suggestion = this.partnerSuggestion();
+    if (suggestion) {
+      this.newMessage = suggestion;
+      this.sendMessage();
+      this.partnerSuggestion.set(null);
+    }
+  }
+
   sendMessage() {
     if (this.newMessage.trim()) {
       const sender = this.nextSender();
@@ -117,6 +129,7 @@ export class ChatComponent {
       this.messages.update(msgs => [...msgs, msg]);
       this.newMessage = '';
       this.suggestions.set([]); // Clear suggestions on send
+      this.partnerSuggestion.set(null);
 
       this.isAnalyzing.set(true);
 
@@ -137,6 +150,20 @@ export class ChatComponent {
           error: (err) => {
             console.error('Błąd analizy komunikacji:', err);
             this.isAnalyzing.set(false);
+          }
+        });
+
+        // Generowanie sugestii odpowiedzi partnera
+        this.isPredicting.set(true);
+        this.suggestionService.predictPartnerReaction(this.messages()).subscribe({
+          next: (result) => {
+            console.log('Otrzymano sugestię odpowiedzi partnera:', result);
+            this.partnerSuggestion.set(result.suggestion);
+            this.isPredicting.set(false);
+          },
+          error: (err) => {
+            console.error('Błąd przewidywania reakcji partnera:', err);
+            this.isPredicting.set(false);
           }
         });
       } else {

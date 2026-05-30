@@ -49,6 +49,25 @@
           <span *ngIf="msg.status === 'blunder'">??</span>
         </div>
       </div>
+
+      <!-- Partner Prediction Loader -->
+      <div class="message-wrapper ai" *ngIf="isPredicting()">
+        <div class="message ai draft loading">
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Partner Suggestion Bubble -->
+      <div class="message-wrapper ai" *ngIf="partnerSuggestion() as suggestion">
+        <div class="message ai draft" (click)="usePartnerSuggestion()">
+          <div class="draft-label">Sugerowana odpowiedź (kliknij, aby wysłać):</div>
+          <div class="message-content">
+            {{ suggestion }}
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Suggestions Area -->

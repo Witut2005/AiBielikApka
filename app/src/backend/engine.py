@@ -173,6 +173,17 @@ Zwróć WYŁĄCZNIE JSON (bez żadnego dodatkowego tekstu, bez disclaimerów):
   ]
 }}"""
 
+_TEMPLATE_PREDICT_REACTION = """\
+To jest historia rozmowy (ostatnie wiadomości):
+{history_formatted}
+
+Na podstawie powyższej rozmowy, przewidź co Druga Strona (Partnerka) mogłaby TERAZ odpowiedzieć Użytkownikowi.
+Druga Strona jest zdenerwowana, impulsywna i nie przebiera w słowach, jeśli sytuacja tego wymaga. Jej odpowiedź powinna być naturalna dla kłótni.
+
+Zwróć WYŁĄCZNIE JSON (bez żadnego dodatkowego tekstu, bez disclaimerów):
+{{
+  "suggestion": "treść sugerowanej odpowiedzi"
+}}"""
 
 def _parse_json_from_content(content: str) -> dict:
     content = content.strip()
@@ -221,6 +232,37 @@ def _call_bielik(insult: str, my_response: str) -> dict:
     result["suggestions"] = sorted(result["suggestions"], key=lambda x: x["percentage"])
     jsonschema.validate(instance=result, schema=_RESPONSE_SCHEMA)
     return result
+
+
+def _call_bielik_predict(messages: list[dict]) -> dict:
+    history_formatted = ""
+    for m in messages[-10:]:
+        role = "Użytkownik" if m["sender"] == "user" else "Druga Strona"
+        history_formatted += f"{role}: {m['text']}\n"
+    
+    prompt = _TEMPLATE_PREDICT_REACTION.format(history_formatted=history_formatted)
+    
+    response = requests.post(
+        _get_bielik_url(),
+        headers={
+            "Authorization": f"Bearer {_load_api_key()}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": _get_bielik_model(),
+            "messages": [
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.7,
+            "max_tokens": 512,
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+
+    raw = response.json()["choices"][0]["message"]["content"]
+    return _parse_json_from_content(raw)
 
 
 _ANGER_REQUEST_SCHEMA = {
@@ -290,6 +332,21 @@ def analyze_message_endpoint():
     try:
         result = analyze_communication(message_text, context)
         # Opcjonalnie: walidacja schematu tutaj, jeśli chcemy być pewni
+        return jsonify(result), 200
+    except Exception as exc:
+        return jsonify(error=str(exc)), 500
+
+
+@bp.post("/api/predict-reaction")
+def predict_reaction():
+    body = request.get_json(force=True, silent=True) or {}
+    messages = body.get("messages", [])
+
+    if not messages:
+        return jsonify(error="messages history is required"), 400
+
+    try:
+        result = _call_bielik_predict(messages)
         return jsonify(result), 200
     except Exception as exc:
         return jsonify(error=str(exc)), 500
