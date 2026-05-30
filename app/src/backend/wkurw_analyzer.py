@@ -20,7 +20,6 @@ DEFAULT_SYSTEM_PROMPT = (
 	"Oceniasz poziom zdenerwowania osob A i B na podstawie ich tekstow. "
 	"Osoba B rozpoczyna dialog. "
 	"Opis osoby B jest wymagany i musisz go uwzglednic przy ocenie zdenerwowania. "
-	"Bazowy poziom zdenerwowania dotyczy tylko osoby B. "
 	"Jesli podano ANGER_HISTORY, uwzglednij ja przy ocenie zdenerwowania. "
 	"Zwracasz tylko poprawny JSON bez komentarzy i bez markdown. "
 	"Uzyj skali 0-100 (0 spokoj, 100 bardzo zdenerwowany). "
@@ -40,7 +39,6 @@ DEFAULT_QUESTION = (
 	"Wynik zwroc zgodnie ze schematem z system prompt."
 )
 
-BASE_ANGER = 50
 HISTORY_CSV_PATH = Path(__file__).with_name("anger_history.csv")
 HISTORY_LIMIT = 10
 HISTORY_TEXT_LIMIT = 5
@@ -72,7 +70,6 @@ def build_anger_prompt(
 		history_text_block = ""
 	user_prompt = (
 		f"Pytanie:\n{question}\n\n"
-		f"Bazowy poziom zdenerwowania osoby B (0-100):\n{BASE_ANGER}\n\n"
 		f"{history_block}"
 		f"{history_text_block}"
 		f"Opis osoby B:\n{person_b_block}\n\n"
