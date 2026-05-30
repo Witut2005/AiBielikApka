@@ -1,0 +1,106 @@
+.analysis-panel {
+  position: fixed;
+  right: 20px;
+  top: 3vh;
+  width: 420px;
+  height: 90vh;
+  background: white;
+  border: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease-out;
+  box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+  border-radius: 16px;
+  z-index: 1000;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.analysis-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.analysis-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2c3e50;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #95a5a6;
+  padding: 0;
+  line-height: 1;
+}
+
+.analysis-content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  color: white;
+}
+
+.status-badge .icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.status-badge.brilliant { background-color: #1ba1e2; }
+.status-badge.great { background-color: #5b8bb0; }
+.status-badge.best, .status-badge.good { background-color: #95bb4a; }
+.status-badge.inaccuracy { background-color: #f0c15c; }
+.status-badge.mistake { background-color: #e58f2a; }
+.status-badge.blunder { background-color: #ca3431; }
+
+.quoted-message {
+  font-style: italic;
+  color: #7f8c8d;
+  border-left: 3px solid #eee;
+  padding-left: 1rem;
+  font-size: 0.9rem;
+}
+
+h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #34495e;
+}
+
+p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #2c3e50;
+}
+
+.explanation-section, .tips-section {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+}
