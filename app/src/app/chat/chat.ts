@@ -104,6 +104,7 @@ export class ChatComponent {
   selectSuggestion(suggestion: Suggestion) {
     this.newMessage = suggestion.text;
     this.suggestions.set([]);
+    this.sendMessage();
   }
 
   usePartnerSuggestion() {
