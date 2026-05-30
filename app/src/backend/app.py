@@ -5,10 +5,13 @@ from pathlib import Path
 
 from flask import Flask, jsonify, send_from_directory
 
+from engine import bp as engine_bp
+
 BASE_DIR = Path(__file__).resolve().parent
 DIST_DIR = (BASE_DIR / ".." / ".." / "dist" / "app").resolve()
 
 app = Flask(__name__, static_folder=str(DIST_DIR), static_url_path="")
+app.register_blueprint(engine_bp)
 
 try:
     from flask_cors import CORS
