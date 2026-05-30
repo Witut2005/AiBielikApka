@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { AnalysisData } from './analysis/analysis';
 
 export type TensionLevel = 'low' | 'medium' | 'high';
 
@@ -63,6 +64,29 @@ export class AnalysisService {
           overall_tension: 'low' as TensionLevel,
           summary: 'Nie udało się przeprowadzić analizy.'
         });
+      })
+    );
+  }
+
+  analyzeCommunication(message: string): Observable<AnalysisData> {
+    const body = {
+      message_text: message,
+      context: this.personDescription
+    };
+
+    return this.http.post<any>('http://localhost:5000/api/analyze-message', body).pipe(
+      map(res => ({
+        ...res,
+        messageText: message
+      })),
+      catchError(error => {
+        console.error('Błąd analizy komunikacji:', error);
+        return of({
+          status: 'good',
+          messageText: message,
+          explanation: 'Nie udało się przeprowadzić szczegółowej analizy AI.',
+          signals: []
+        } as AnalysisData);
       })
     );
   }

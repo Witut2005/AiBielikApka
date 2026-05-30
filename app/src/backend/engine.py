@@ -7,22 +7,39 @@ from pathlib import Path
 import jsonschema
 import requests
 from flask import Blueprint, jsonify, request
+from dotenv import load_dotenv
 
+BASE_DIR = Path(__file__).resolve().parent
 
-BIELIK_API_URL = "https://llm.hpc.psnc.pl/v1/chat/completions"
-BIELIK_MODEL = "bielik_11b"
+def _load_env() -> None:
+    # Proste szukanie .env w katalogu wyżej (root repozytorium)
+    env_path = BASE_DIR.parent.parent / ".env"
+    if env_path.is_file():
+        load_dotenv(dotenv_path=env_path)
+    else:
+        load_dotenv()
 
+_load_env()
 
 def _load_api_key() -> str:
-    key_path = Path(__file__).parent / "api_key.txt"
-    if key_path.exists():
-        key = key_path.read_text(encoding="utf-8").strip()
-        if key:
-            return key
-    key = os.environ.get("BIELIK_API_KEY", "")
+    key = os.environ.get("PCSS_API_KEY")
     if not key:
-        raise ValueError("Brak klucza API: utwórz plik api_key.txt lub ustaw BIELIK_API_KEY")
+        # Fallback do starej nazwy lub pliku jeśli istnieje
+        key = os.environ.get("BIELIK_API_KEY")
+        if not key:
+            key_path = Path(__file__).parent / "api_key.txt"
+            if key_path.exists():
+                key = key_path.read_text(encoding="utf-8").strip()
+    
+    if not key:
+        raise ValueError("Brak klucza API: ustaw PCSS_API_KEY lub BIELIK_API_KEY")
     return key
+
+def _get_bielik_url() -> str:
+    return os.environ.get("PCSS_BASE_URL", "https://llm.hpc.psnc.pl/v1").rstrip("/") + "/chat/completions"
+
+def _get_bielik_model() -> str:
+    return os.environ.get("PCSS_MODEL", "bielik_11b")
 
 
 bp = Blueprint("engine", __name__)
@@ -181,13 +198,13 @@ def _call_bielik(insult: str, my_response: str) -> dict:
         )
 
     response = requests.post(
-        BIELIK_API_URL,
+        _get_bielik_url(),
         headers={
             "Authorization": f"Bearer {_load_api_key()}",
             "Content-Type": "application/json",
         },
         json={
-            "model": BIELIK_MODEL,
+            "model": _get_bielik_model(),
             "messages": [
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": prompt},
@@ -257,6 +274,25 @@ def analyze_anger_endpoint():
         return jsonify(error=f"Odpowiedź modelu nie pasuje do schematu: {exc.message}"), 502
     except RuntimeError as exc:
         return jsonify(error=str(exc)), 502
+
+
+@bp.post("/api/analyze-message")
+def analyze_message_endpoint():
+    from communication_analyzer import analyze_communication
+
+    body = request.get_json(force=True, silent=True) or {}
+    message_text = body.get("message_text")
+    context = body.get("context", "")
+
+    if not message_text:
+        return jsonify(error="message_text is required"), 400
+
+    try:
+        result = analyze_communication(message_text, context)
+        # Opcjonalnie: walidacja schematu tutaj, jeśli chcemy być pewni
+        return jsonify(result), 200
+    except Exception as exc:
+        return jsonify(error=str(exc)), 500
 
 
 @bp.post("/api/analyze")

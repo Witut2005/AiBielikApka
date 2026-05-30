@@ -11,6 +11,7 @@ interface Message {
   timestamp: Date;
   status?: 'brilliant' | 'great' | 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder';
   analysis?: AnalysisResult;
+  communicationAnalysis?: AnalysisData;
 }
 
 @Component({
@@ -76,14 +77,17 @@ export class ChatComponent {
 
   openAnalysis(msg: Message) {
     console.log('!!! CLICK DETECTED - openAnalysis CALLED !!!', msg);
-    if (msg.status) {
+    if (msg.communicationAnalysis) {
+      this.selectedAnalysis.set(msg.communicationAnalysis);
+      console.log('selectedAnalysis signal state (AI):', this.selectedAnalysis());
+    } else if (msg.status) {
       this.selectedAnalysis.set({
         status: msg.status,
         messageText: msg.text,
         explanation: msg.analysis?.summary || this.getMockExplanation(msg.status, msg.text),
         signals: msg.sender === 'user' ? msg.analysis?.signals_a : msg.analysis?.signals_b
       });
-      console.log('selectedAnalysis signal state:', this.selectedAnalysis());
+      console.log('selectedAnalysis signal state (Mock/Tension):', this.selectedAnalysis());
     } else {
       console.warn('Message has no status, cannot open analysis');
     }
@@ -97,36 +101,53 @@ export class ChatComponent {
       const msg: Message = {
         text: text,
         sender: sender,
-        timestamp: new Date(),
-        status: sender === 'user' ? this.getMockStatus() : undefined
+        timestamp: new Date()
       };
       
       this.messages.update(msgs => [...msgs, msg]);
       this.newMessage = '';
 
-      // Wywołanie analizy TYLKO po wiadomościach drugiej strony (ai)
-      if (sender === 'ai') {
-        this.isAnalyzing.set(true);
-        this.analysisService.analyzeMessage(text, this.messages()).subscribe({
+      this.isAnalyzing.set(true);
+
+      if (sender === 'user') {
+        this.analysisService.analyzeCommunication(text).subscribe({
           next: (result) => {
-            console.log('Otrzymano analizę:', result);
-            this.lastAnalysis.set(result);
-            
-            // Aktualizujemy ostatnią wiadomość o wynik analizy
+            console.log('Otrzymano analizę komunikacji:', result);
             this.messages.update(msgs => {
               const lastMsg = msgs[msgs.length - 1];
-              if (lastMsg && lastMsg.text === text) {
+              if (lastMsg && lastMsg.text === text && lastMsg.sender === 'user') {
+                lastMsg.communicationAnalysis = result;
+                lastMsg.status = result.status;
+              }
+              return [...msgs];
+            });
+            this.isAnalyzing.set(false);
+          },
+          error: (err) => {
+            console.error('Błąd analizy komunikacji:', err);
+            this.isAnalyzing.set(false);
+          }
+        });
+      } else {
+        // Wywołanie analizy po wiadomościach drugiej strony (ai)
+        this.analysisService.analyzeMessage(text, this.messages()).subscribe({
+          next: (result) => {
+            console.log('Otrzymano analizę napięcia:', result);
+            this.lastAnalysis.set(result);
+            
+            this.messages.update(msgs => {
+              const lastMsg = msgs[msgs.length - 1];
+              if (lastMsg && lastMsg.text === text && lastMsg.sender === 'ai') {
                 lastMsg.analysis = result;
               }
               return [...msgs];
             });
 
-            // Aktualizujemy wykres wkurzenia partnera (anger_level_b)
             this.angerLevels.update(levels => [...levels, result.anger_level_b]);
             this.isAnalyzing.set(false);
           },
           error: (err) => {
-            console.error('Błąd analizy w komponencie:', err);
+            console.error('Błąd analizy napięcia:', err);
             this.isAnalyzing.set(false);
           }
         });
