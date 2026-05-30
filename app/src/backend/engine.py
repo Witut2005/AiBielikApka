@@ -206,6 +206,59 @@ def _call_bielik(insult: str, my_response: str) -> dict:
     return result
 
 
+_ANGER_REQUEST_SCHEMA = {
+    "type": "object",
+    "required": ["text_a", "text_b", "person_b_description"],
+    "additionalProperties": False,
+    "properties": {
+        "text_a": {"type": "string", "minLength": 1, "maxLength": 500},
+        "text_b": {"type": "string", "minLength": 1, "maxLength": 500},
+        "person_b_description": {"type": "string", "minLength": 1, "maxLength": 500},
+    },
+}
+
+_ANGER_RESPONSE_SCHEMA = {
+    "type": "object",
+    "required": ["anger_level_a", "anger_level_b", "signals_a", "signals_b", "overall_tension", "summary"],
+    "additionalProperties": False,
+    "properties": {
+        "anger_level_a": {"type": "integer", "minimum": 0, "maximum": 100},
+        "anger_level_b": {"type": "integer", "minimum": 0, "maximum": 100},
+        "signals_a": {"type": "array", "items": {"type": "string"}},
+        "signals_b": {"type": "array", "items": {"type": "string"}},
+        "overall_tension": {"type": "string", "enum": ["low", "medium", "high"]},
+        "summary": {"type": "string", "minLength": 1},
+    },
+}
+
+
+@bp.post("/api/analyze-anger")
+def analyze_anger_endpoint():
+    from wkurw_analyzer import analyze_anger
+
+    body = request.get_json(force=True, silent=True) or {}
+
+    try:
+        jsonschema.validate(instance=body, schema=_ANGER_REQUEST_SCHEMA)
+    except jsonschema.ValidationError as exc:
+        return jsonify(error=exc.message), 400
+
+    try:
+        result = analyze_anger(
+            text_a=body["text_a"],
+            text_b=body["text_b"],
+            person_b_description=body["person_b_description"],
+        )
+        jsonschema.validate(instance=result, schema=_ANGER_RESPONSE_SCHEMA)
+        return jsonify(result), 200
+    except ValueError as exc:
+        return jsonify(error=str(exc)), 500
+    except jsonschema.ValidationError as exc:
+        return jsonify(error=f"Odpowiedź modelu nie pasuje do schematu: {exc.message}"), 502
+    except RuntimeError as exc:
+        return jsonify(error=str(exc)), 502
+
+
 @bp.post("/api/analyze")
 def analyze():
     body = request.get_json(force=True, silent=True) or {}
