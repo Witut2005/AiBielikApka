@@ -43,6 +43,7 @@ DEFAULT_QUESTION = (
 BASE_ANGER = 50
 HISTORY_CSV_PATH = Path(__file__).with_name("anger_history.csv")
 HISTORY_LIMIT = 10
+HISTORY_TEXT_LIMIT = 5
 
 
 def build_anger_prompt(
@@ -50,6 +51,7 @@ def build_anger_prompt(
 	text_b: str,
 	person_b_description: str,
 	previous_anger_levels: list[int],
+	previous_text_pairs: list[tuple[str, str]],
 	system_prompt: str = DEFAULT_SYSTEM_PROMPT,
 ) -> list[dict[str, str]]:
 	question = DEFAULT_QUESTION
@@ -60,10 +62,19 @@ def build_anger_prompt(
 		if previous_anger_levels
 		else ""
 	)
+	if previous_text_pairs:
+		pairs_block = "\n".join(
+			f"{idx}. A: {text_a}\n   B: {text_b}"
+			for idx, (text_a, text_b) in enumerate(previous_text_pairs, start=1)
+		)
+		history_text_block = f"HISTORIA_WYPOWIEDZI:\n{pairs_block}\n\n"
+	else:
+		history_text_block = ""
 	user_prompt = (
 		f"Pytanie:\n{question}\n\n"
 		f"Bazowy poziom zdenerwowania osoby B (0-100):\n{BASE_ANGER}\n\n"
 		f"{history_block}"
+		f"{history_text_block}"
 		f"Opis osoby B:\n{person_b_block}\n\n"
 		f"Tekst osoby A:\n{text_a}\n\n"
 		f"Tekst osoby B:\n{text_b}"
@@ -80,14 +91,17 @@ def analyze_anger(
 	text_b: str,
 	person_b_description: str,
 	max_tokens: int = 400,
+	include_prompt: bool = False,
 ) -> dict[str, Any]:
 	client, model = _create_bielik_client()
 	previous_anger_levels = _load_previous_anger_levels(HISTORY_CSV_PATH)
+	previous_text_pairs = _load_previous_text_pairs(HISTORY_CSV_PATH)
 	messages = build_anger_prompt(
 		text_a=text_a,
 		text_b=text_b,
 		person_b_description=person_b_description,
 		previous_anger_levels=previous_anger_levels,
+		previous_text_pairs=previous_text_pairs,
 	)
 
 	try:
@@ -98,7 +112,10 @@ def analyze_anger(
 			temperature=0.2,
 		)
 		content = response.choices[0].message.content or ""
-		return _parse_json_response(content)
+		result = _parse_json_response(content)
+		if include_prompt:
+			result["prompt_messages"] = messages
+		return result
 	except AuthenticationError as exc:
 		raise RuntimeError(
 			"Blad 401 z PCSS. Sprawdz PCSS_API_KEY oraz dostep do modelu PCSS_MODEL."
@@ -184,5 +201,30 @@ def _load_previous_anger_levels(history_path: Path) -> list[int]:
 		return []
 
 	limited = levels[-HISTORY_LIMIT:]
+	limited.reverse()
+	return limited
+
+
+def _load_previous_text_pairs(history_path: Path) -> list[tuple[str, str]]:
+	if not history_path.is_file():
+		return []
+
+	pairs: list[tuple[str, str]] = []
+	try:
+		with history_path.open("r", newline="", encoding="utf-8") as handle:
+			reader = csv.DictReader(handle)
+			for row in reader:
+				text_a = (row.get("text_a") or "").strip()
+				text_b = (row.get("text_b") or "").strip()
+				if not text_a and not text_b:
+					continue
+				pairs.append((text_a, text_b))
+	except OSError:
+		return []
+
+	if not pairs:
+		return []
+
+	limited = pairs[-HISTORY_TEXT_LIMIT:]
 	limited.reverse()
 	return limited

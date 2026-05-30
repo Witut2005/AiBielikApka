@@ -9,13 +9,15 @@ from typing import Any
 from wkurw_analyzer import HISTORY_CSV_PATH, analyze_anger
 
 
-TEXT_A = "Jesteś gruba haha"
-TEXT_B = "zaraz ci zrobie krzywde"
-PERSON_B_DESCRIPTION = "Osoba jest bardzo sarkastyczna, wie że jest otyła i jej to nie pzeszkadza. Docinki na ten temat nie denerwują jej"
+TEXT_A = "Znowu ten sam błąd w kodzie. Czy ty w ogóle czytasz dokumentację przed wysłaniem Pull Requesta?"
+TEXT_B = "Czytałem, ale terminy gonią i musiałem pójść na kompromis. Zamiast tylko wytykać błędy, mógłbyś pomóc mi to zoptymalizować."
+PERSON_B_DESCRIPTION = "Osoba jest ambitna, ale łatwo się stresuje pod presją czasu. Reaguje defensywnie na krytykę, gdy uważa, że pracuje najciężej jak potrafi."
 MAX_TOKENS: int = 500
 
 CSV_HEADERS = [
     "created_at",
+    "text_a",
+    "text_b",
     "anger_level_a",
     "anger_level_b",
     "signals_a",
@@ -39,9 +41,11 @@ def _get_value(value: str | None, label: str) -> str:
     return _prompt_value(label) or ""
 
 
-def _append_result_to_csv(result: dict[str, Any]) -> None:
+def _append_result_to_csv(result: dict[str, Any], text_a: str, text_b: str) -> None:
     row = {
         "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "text_a": text_a,
+        "text_b": text_b,
         "anger_level_a": result.get("anger_level_a", ""),
         "anger_level_b": result.get("anger_level_b", ""),
         "signals_a": json.dumps(result.get("signals_a", []), ensure_ascii=False),
@@ -74,13 +78,14 @@ def main() -> int:
             text_b=text_b,
             person_b_description=person_b_description,
             max_tokens=MAX_TOKENS,
+            include_prompt=True,
         )
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
     try:
-        _append_result_to_csv(result)
+        _append_result_to_csv(result, text_a, text_b)
     except Exception as exc:
         print(f"Error: Nie udalo sie zapisac CSV: {exc}", file=sys.stderr)
         return 1
