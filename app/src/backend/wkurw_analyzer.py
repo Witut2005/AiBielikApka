@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 import os
 from pathlib import Path
@@ -20,6 +21,7 @@ DEFAULT_SYSTEM_PROMPT = (
 	"Osoba B rozpoczyna dialog. "
 	"Opis osoby B jest wymagany i musisz go uwzglednic przy ocenie zdenerwowania. "
 	"Bazowy poziom zdenerwowania dotyczy tylko osoby B. "
+	"Jesli podano ANGER_HISTORY, uwzglednij ja przy ocenie zdenerwowania. "
 	"Zwracasz tylko poprawny JSON bez komentarzy i bez markdown. "
 	"Uzyj skali 0-100 (0 spokoj, 100 bardzo zdenerwowany). "
 	"Schemat JSON: {"
@@ -34,24 +36,34 @@ DEFAULT_SYSTEM_PROMPT = (
 
 DEFAULT_QUESTION = (
 	"Przeanalizuj poziom zdenerwowania osoby A i osoby B na podstawie ich tekstow, "
-	"opisu osoby B. "
+	"opisu osoby B oraz ANGER_HISTORY, jesli podana. "
 	"Wynik zwroc zgodnie ze schematem z system prompt."
 )
 
 BASE_ANGER = 50
+HISTORY_CSV_PATH = Path(__file__).with_name("anger_history.csv")
+HISTORY_LIMIT = 10
 
 
 def build_anger_prompt(
 	text_a: str,
 	text_b: str,
 	person_b_description: str,
+	previous_anger_levels: list[int],
 	system_prompt: str = DEFAULT_SYSTEM_PROMPT,
 ) -> list[dict[str, str]]:
 	question = DEFAULT_QUESTION
 	person_b_block = person_b_description
+	previous_levels_block = ", ".join(str(level) for level in previous_anger_levels)
+	history_block = (
+		f"ANGER_HISTORY:\n{previous_levels_block}\n\n"
+		if previous_anger_levels
+		else ""
+	)
 	user_prompt = (
 		f"Pytanie:\n{question}\n\n"
 		f"Bazowy poziom zdenerwowania osoby B (0-100):\n{BASE_ANGER}\n\n"
+		f"{history_block}"
 		f"Opis osoby B:\n{person_b_block}\n\n"
 		f"Tekst osoby A:\n{text_a}\n\n"
 		f"Tekst osoby B:\n{text_b}"
@@ -70,10 +82,12 @@ def analyze_anger(
 	max_tokens: int = 400,
 ) -> dict[str, Any]:
 	client, model = _create_bielik_client()
+	previous_anger_levels = _load_previous_anger_levels(HISTORY_CSV_PATH)
 	messages = build_anger_prompt(
 		text_a=text_a,
 		text_b=text_b,
 		person_b_description=person_b_description,
+		previous_anger_levels=previous_anger_levels,
 	)
 
 	try:
@@ -143,3 +157,32 @@ def _parse_json_response(content: str) -> dict[str, Any]:
 			return json.loads(content[start : end + 1])
 
 	raise ValueError("Bielik response is not valid JSON")
+
+
+def _load_previous_anger_levels(history_path: Path) -> list[int]:
+	if not history_path.is_file():
+		return []
+
+	levels: list[int] = []
+	try:
+		with history_path.open("r", newline="", encoding="utf-8") as handle:
+			reader = csv.DictReader(handle)
+			for row in reader:
+				raw_value = (row.get("anger_level_b") or "").strip()
+				if not raw_value:
+					continue
+				try:
+					value = int(float(raw_value))
+				except ValueError:
+					continue
+				if 0 <= value <= 100:
+					levels.append(value)
+	except OSError:
+		return []
+
+	if not levels:
+		return []
+
+	limited = levels[-HISTORY_LIMIT:]
+	limited.reverse()
+	return limited

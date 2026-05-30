@@ -17,6 +17,7 @@ __pycache__/
 dist/
 .DS_Store
 output.txt
+anger_history.csv
 
 # Node
 /node_modules
