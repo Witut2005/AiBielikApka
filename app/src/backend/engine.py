@@ -178,7 +178,7 @@ To jest historia rozmowy (ostatnie wiadomości):
 {history_formatted}
 
 Na podstawie powyższej rozmowy, przewidź co Druga Strona (Partnerka) mogłaby TERAZ odpowiedzieć Użytkownikowi.
-Druga Strona jest zdenerwowana, impulsywna i nie przebiera w słowach, jeśli sytuacja tego wymaga. Jej odpowiedź powinna być naturalna dla kłótni.
+Odpowiedź powinna być naturalną, adekwatną reakcją na ostatnią wypowiedź Użytkownika.
 
 Zwróć WYŁĄCZNIE JSON (bez żadnego dodatkowego tekstu, bez disclaimerów):
 {{
