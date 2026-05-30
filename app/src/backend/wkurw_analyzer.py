@@ -17,6 +17,7 @@ except ImportError as exc:
 DEFAULT_SYSTEM_PROMPT = (
 	"Jestes ekspertem ds. analizy emocji w rozmowach. "
 	"Oceniasz poziom zdenerwowania osob A i B na podstawie ich tekstow. "
+	"Jesli podano opis osoby B, uwzglednij go przy ocenie zdenerwowania. "
 	"Zwracasz tylko poprawny JSON bez komentarzy i bez markdown. "
 	"Uzyj skali 0-100 (0 spokoj, 100 bardzo zdenerwowany). "
 	"Schemat JSON: {"
@@ -30,7 +31,8 @@ DEFAULT_SYSTEM_PROMPT = (
 )
 
 DEFAULT_QUESTION = (
-	"Przeanalizuj poziom zdenerwowania osoby A i osoby B na podstawie ich tekstow. "
+	"Przeanalizuj poziom zdenerwowania osoby A i osoby B na podstawie ich tekstow, "
+	"opisu osoby B (jesli podany) oraz odpowiedzi. "
 	"Wynik zwroc zgodnie ze schematem z system prompt."
 )
 
@@ -41,13 +43,16 @@ def build_anger_prompt(
 	question: str | None = None,
 	answer: str | None = None,
 	system_prompt: str = DEFAULT_SYSTEM_PROMPT,
+	person_b_description: str | None = None,
 ) -> list[dict[str, str]]:
 	if question is None:
 		question = DEFAULT_QUESTION
 
 	answer_block = answer if answer else "(brak)"
+	person_b_block = person_b_description if person_b_description else "(brak)"
 	user_prompt = (
 		f"Pytanie:\n{question}\n\n"
+		f"Opis osoby B:\n{person_b_block}\n\n"
 		f"Tekst osoby A:\n{text_a}\n\n"
 		f"Tekst osoby B:\n{text_b}\n\n"
 		f"Odpowiedz:\n{answer_block}"
@@ -65,6 +70,7 @@ def analyze_anger(
 	question: str | None = None,
 	answer: str | None = None,
 	max_tokens: int = 400,
+	person_b_description: str | None = None,
 ) -> dict[str, Any]:
 	client, model = _create_bielik_client()
 	messages = build_anger_prompt(
@@ -72,6 +78,7 @@ def analyze_anger(
 		text_b=text_b,
 		question=question,
 		answer=answer,
+		person_b_description=person_b_description,
 	)
 
 	try:
