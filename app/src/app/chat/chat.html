@@ -42,7 +42,7 @@
       <textarea
         [(ngModel)]="newMessage"
         (keyup.enter)="sendMessage()"
-        placeholder="Napisz wiadomość..."
+        [placeholder]="placeholderText"
         rows="1"
       ></textarea>
       <button (click)='sendMessage()' [disabled]="!newMessage.trim()">

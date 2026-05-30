@@ -18,16 +18,15 @@ interface Message {
   styleUrl: './chat.css'
 })
 export class ChatComponent {
-  messages = signal<Message[]>([
-    {
-      text: 'Witaj! Przeanalizowałem Twoją sytuację. O czym chcesz porozmawiać najpierw?',
-      sender: 'ai',
-      timestamp: new Date()
-    }
-  ]);
+  messages = signal<Message[]>([]);
 
   newMessage = '';
   selectedAnalysis = signal<AnalysisData | null>(null);
+  nextSender = signal<'user' | 'ai'>('ai');
+
+  get placeholderText(): string {
+    return this.nextSender() === 'user' ? 'Odpowiedz jako Ty...' : 'Napisz jako Druga Strona (zacznij tutaj)...';
+  }
 
   constructor() {
     console.log('ChatComponent initialized');
@@ -67,26 +66,19 @@ export class ChatComponent {
 
   sendMessage() {
     if (this.newMessage.trim()) {
-      const userMsg: Message = {
+      const sender = this.nextSender();
+      const msg: Message = {
         text: this.newMessage,
-        sender: 'user',
+        sender: sender,
         timestamp: new Date(),
-        status: this.getMockStatus()
+        status: sender === 'user' ? this.getMockStatus() : undefined
       };
       
-      this.messages.update(msgs => [...msgs, userMsg]);
-      const currentInput = this.newMessage;
+      this.messages.update(msgs => [...msgs, msg]);
       this.newMessage = '';
-
-      // Symulacja odpowiedzi AI
-      setTimeout(() => {
-        const aiMsg: Message = {
-          text: `Dziękuję za wiadomość: "${currentInput}". Jak mogę Ci jeszcze pomóc w tej kwestii?`,
-          sender: 'ai',
-          timestamp: new Date()
-        };
-        this.messages.update(msgs => [...msgs, aiMsg]);
-      }, 1000);
+      
+      // Przełączamy nadawcę na następną wiadomość
+      this.nextSender.set(sender === 'user' ? 'ai' : 'user');
     }
   }
 }
