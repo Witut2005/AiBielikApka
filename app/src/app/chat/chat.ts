@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AnalysisComponent, AnalysisData } from './analysis/analysis';
 import { AngerChartComponent } from './anger-chart/anger-chart';
 import { AnalysisService, AnalysisResult } from './analysis.service';
+import { SuggestionService, Suggestion } from './suggestion.service';
 
 interface Message {
   text: string;
@@ -23,6 +24,7 @@ interface Message {
 })
 export class ChatComponent {
   private analysisService = inject(AnalysisService);
+  private suggestionService = inject(SuggestionService);
   
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
@@ -30,6 +32,9 @@ export class ChatComponent {
   angerLevels = signal<number[]>([50]); // Początkowy poziom wkurzenia partnera (B)
   lastAnalysis = signal<AnalysisResult | null>(null);
   isAnalyzing = signal<boolean>(false);
+  
+  suggestions = signal<Suggestion[]>([]);
+  isSuggesting = signal<boolean>(false);
 
   newMessage = '';
   selectedAnalysis = signal<AnalysisData | null>(null);
@@ -93,6 +98,11 @@ export class ChatComponent {
     }
   }
 
+  selectSuggestion(suggestion: Suggestion) {
+    this.newMessage = suggestion.text;
+    this.suggestions.set([]);
+  }
+
   sendMessage() {
     if (this.newMessage.trim()) {
       const sender = this.nextSender();
@@ -106,6 +116,7 @@ export class ChatComponent {
       
       this.messages.update(msgs => [...msgs, msg]);
       this.newMessage = '';
+      this.suggestions.set([]); // Clear suggestions on send
 
       this.isAnalyzing.set(true);
 
@@ -149,6 +160,20 @@ export class ChatComponent {
           error: (err) => {
             console.error('Błąd analizy napięcia:', err);
             this.isAnalyzing.set(false);
+          }
+        });
+
+        // Pobieranie sugestii
+        this.isSuggesting.set(true);
+        this.suggestionService.getSuggestions(text).subscribe({
+          next: (result) => {
+            console.log('Otrzymano sugestie:', result);
+            this.suggestions.set(result.suggestions);
+            this.isSuggesting.set(false);
+          },
+          error: (err) => {
+            console.error('Błąd pobierania sugestii:', err);
+            this.isSuggesting.set(false);
           }
         });
       }

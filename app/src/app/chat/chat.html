@@ -51,6 +51,25 @@
       </div>
     </div>
 
+    <!-- Suggestions Area -->
+    <div class="suggestions-container" *ngIf="suggestions().length > 0 || isSuggesting()">
+      <div class="suggestions-header">
+        <span *ngIf="!isSuggesting()">💡 Sugestie ripost (kliknij, aby wybrać):</span>
+        <span *ngIf="isSuggesting()">🤔 Generowanie ripost...</span>
+      </div>
+      <div class="suggestions-list" *ngIf="suggestions().length > 0">
+        <div 
+          *ngFor="let sug of suggestions()" 
+          class="suggestion-item" 
+          (click)="selectSuggestion(sug)"
+          [ngClass]="'p-' + sug.percentage"
+        >
+          <span class="percentage">{{ sug.percentage }}%</span>
+          <span class="text">{{ sug.text }}</span>
+        </div>
+      </div>
+    </div>
+
     <div class="input-area">
       <textarea
         [(ngModel)]="newMessage"

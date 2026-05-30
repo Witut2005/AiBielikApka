@@ -192,6 +192,66 @@
   text-align: right;
 }
 
+.suggestions-container {
+  padding: 1rem;
+  background: #fff;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.suggestions-header {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  font-weight: 600;
+}
+
+.suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: #f8f9fa;
+  border: 1px solid #e1e8ed;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.suggestion-item:hover {
+  background: #fff;
+  border-color: #3498db;
+  transform: translateX(5px);
+}
+
+.suggestion-item .percentage {
+  font-weight: bold;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Kolory w zależności od procenta */
+.suggestion-item.p-0 .percentage { background: #d4edda; color: #155724; }
+.suggestion-item.p-25 .percentage { background: #e2f3f5; color: #0c5460; }
+.suggestion-item.p-50 .percentage { background: #fff3cd; color: #856404; }
+.suggestion-item.p-75 .percentage { background: #f8d7da; color: #721c24; }
+.suggestion-item.p-100 .percentage { background: #343a40; color: #fff; }
+
+.suggestion-item .text {
+  flex: 1;
+}
+
 .input-area {
   padding: 1.2rem;
   background: white;
