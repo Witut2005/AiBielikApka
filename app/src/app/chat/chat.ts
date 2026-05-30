@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AnalysisComponent, AnalysisData } from './analysis/analysis';
+import { AngerChartComponent } from './anger-chart/anger-chart';
 
 interface Message {
   text: string;
@@ -13,12 +14,13 @@ interface Message {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, AnalysisComponent],
+  imports: [CommonModule, FormsModule, AnalysisComponent, AngerChartComponent],
   templateUrl: './chat.html',
   styleUrl: './chat.css'
 })
 export class ChatComponent {
   messages = signal<Message[]>([]);
+  angerLevels = signal<number[]>([50]); // Początkowy poziom wkurzenia
 
   newMessage = '';
   selectedAnalysis = signal<AnalysisData | null>(null);
@@ -75,6 +77,16 @@ export class ChatComponent {
       };
       
       this.messages.update(msgs => [...msgs, msg]);
+      
+      // Jeśli to odpowiedź partnera (ai), aktualizujemy wykres wkurzenia
+      if (sender === 'ai') {
+        const currentAnger = this.angerLevels()[this.angerLevels().length - 1];
+        // Losowa zmiana dla demonstracji: -20 do +20, w zakresie 0-100
+        const change = Math.floor(Math.random() * 41) - 20;
+        const newAnger = Math.max(0, Math.min(100, currentAnger + change));
+        this.angerLevels.update(levels => [...levels, newAnger]);
+      }
+
       this.newMessage = '';
       
       // Przełączamy nadawcę na następną wiadomość

@@ -8,6 +8,13 @@
   overflow-x: hidden;
 }
 
+.left-panel {
+  position: fixed;
+  left: 2rem;
+  top: 3vh;
+  z-index: 2;
+}
+
 .chat-container {
   display: flex;
   flex-direction: column;
