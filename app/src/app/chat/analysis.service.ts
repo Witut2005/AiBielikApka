@@ -38,6 +38,20 @@ export class AnalysisService {
     };
 
     return this.http.post<AnalysisResult>(this.apiUrl, body).pipe(
+      map(result => {
+        // Obliczamy poziom napięcia na podstawie anger_level_b
+        let tension: TensionLevel = 'low';
+        if (result.anger_level_b > 65) {
+          tension = 'high';
+        } else if (result.anger_level_b > 30) {
+          tension = 'medium';
+        }
+        
+        return {
+          ...result,
+          overall_tension: tension
+        };
+      }),
       catchError(error => {
         console.error('Błąd analizy:', error);
         // Zwracamy pusty/domyślny wynik w razie błędu, żeby nie wywalać chatu

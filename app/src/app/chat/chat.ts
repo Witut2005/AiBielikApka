@@ -28,6 +28,7 @@ export class ChatComponent {
   messages = signal<Message[]>([]);
   angerLevels = signal<number[]>([50]); // Początkowy poziom wkurzenia partnera (B)
   lastAnalysis = signal<AnalysisResult | null>(null);
+  isAnalyzing = signal<boolean>(false);
 
   newMessage = '';
   selectedAnalysis = signal<AnalysisData | null>(null);
@@ -105,21 +106,29 @@ export class ChatComponent {
 
       // Wywołanie analizy TYLKO po wiadomościach drugiej strony (ai)
       if (sender === 'ai') {
-        this.analysisService.analyzeMessage(text, this.messages()).subscribe(result => {
-          console.log('Otrzymano analizę:', result);
-          this.lastAnalysis.set(result);
-          
-          // Aktualizujemy ostatnią wiadomość o wynik analizy
-          this.messages.update(msgs => {
-            const lastMsg = msgs[msgs.length - 1];
-            if (lastMsg && lastMsg.text === text) {
-              lastMsg.analysis = result;
-            }
-            return [...msgs];
-          });
+        this.isAnalyzing.set(true);
+        this.analysisService.analyzeMessage(text, this.messages()).subscribe({
+          next: (result) => {
+            console.log('Otrzymano analizę:', result);
+            this.lastAnalysis.set(result);
+            
+            // Aktualizujemy ostatnią wiadomość o wynik analizy
+            this.messages.update(msgs => {
+              const lastMsg = msgs[msgs.length - 1];
+              if (lastMsg && lastMsg.text === text) {
+                lastMsg.analysis = result;
+              }
+              return [...msgs];
+            });
 
-          // Aktualizujemy wykres wkurzenia partnera (anger_level_b)
-          this.angerLevels.update(levels => [...levels, result.anger_level_b]);
+            // Aktualizujemy wykres wkurzenia partnera (anger_level_b)
+            this.angerLevels.update(levels => [...levels, result.anger_level_b]);
+            this.isAnalyzing.set(false);
+          },
+          error: (err) => {
+            console.error('Błąd analizy w komponencie:', err);
+            this.isAnalyzing.set(false);
+          }
         });
       }
       

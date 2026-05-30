@@ -9,6 +9,12 @@
       <div class="tension-badge" *ngIf="lastAnalysis() as analysis" [ngClass]="analysis.overall_tension">
         Napięcie: {{ analysis.overall_tension }}
       </div>
+      
+      <!-- Analysis Loader -->
+      <div class="analysis-loader" *ngIf="isAnalyzing()">
+        <div class="loader-bar"></div>
+        <span>Analizowanie poziomu wkurzenia...</span>
+      </div>
     </div>
 
     <div class="messages-container" #scrollContainer>
