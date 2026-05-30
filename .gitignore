@@ -1,0 +1,14 @@
+# API keys — never commit these
+api_key.txt
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# IDE
+.idea/
