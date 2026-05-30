@@ -6,6 +6,18 @@
 /out-tsc
 /bazel-out
 
+# standard
+.env
+node_modules/
+package-lock.json
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+dist/
+.DS_Store
+output.txt
+
 # Node
 /node_modules
 npm-debug.log
