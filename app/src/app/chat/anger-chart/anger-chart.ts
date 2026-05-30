@@ -49,6 +49,9 @@ export class AngerChartComponent implements OnChanges, AfterViewInit {
           x: {
             grid: {
               display: false
+            },
+            ticks: {
+              display: false
             }
           },
           y: {
