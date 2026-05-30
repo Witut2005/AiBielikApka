@@ -1,0 +1,65 @@
+<div class="layout-container">
+  <div class="left-panel">
+    <app-anger-chart [data]="angerLevels()"></app-anger-chart>
+  </div>
+
+  <div class="chat-container">
+    <div class="chat-header">
+      <h2>Rozmowa z AiBielik</h2>
+    </div>
+
+    <div class="messages-container">
+      <div *ngFor="let msg of messages()" [ngClass]="['message-wrapper', msg.sender]">
+        <div 
+          [ngClass]="['message', msg.sender]" 
+          (click)="msg.sender === 'user' ? openAnalysis(msg) : null"
+          [style.cursor]="msg.sender === 'user' ? 'pointer' : 'default'"
+        >
+          <div class="message-content">
+            {{ msg.text }}
+          </div>
+          <div class="message-time">
+            {{ msg.timestamp | date:'HH:mm' }}
+          </div>
+        </div>
+
+        <!-- Chess-like evaluation icons for user messages -->
+        <div 
+          *ngIf="msg.sender === 'user' && msg.status" 
+          [ngClass]="['eval-icon', msg.status]" 
+          [title]="msg.status"
+          (click)="openAnalysis(msg); $event.stopPropagation()"
+        >
+
+          <span *ngIf="msg.status === 'brilliant'">!!</span>
+          <span *ngIf="msg.status === 'great'">!</span>
+          <span *ngIf="msg.status === 'best'">★</span>
+          <span *ngIf="msg.status === 'good'">✓</span>
+          <span *ngIf="msg.status === 'inaccuracy'">?!</span>
+          <span *ngIf="msg.status === 'mistake'">?</span>
+          <span *ngIf="msg.status === 'blunder'">??</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <textarea
+        [(ngModel)]="newMessage"
+        (keyup.enter)="sendMessage()"
+        [placeholder]="placeholderText"
+        rows="1"
+      ></textarea>
+      <button (click)='sendMessage()' [disabled]="!newMessage.trim()">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <app-analysis 
+    *ngIf="selectedAnalysis()" 
+    [data]="selectedAnalysis()" 
+    (close)="selectedAnalysis.set(null)"
+  ></app-analysis>
+</div>

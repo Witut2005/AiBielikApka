@@ -1,0 +1,42 @@
+<div class="analysis-panel" *ngIf="data">
+  <div class="analysis-header">
+    <h3>Analiza wypowiedzi</h3>
+    <button class="close-btn" (click)="close.emit()">×</button>
+  </div>
+
+  <div class="analysis-content">
+    <div [ngClass]="['status-badge', data.status]">
+      <span class="icon">
+        <ng-container [ngSwitch]="data.status">
+          <span *ngSwitchCase="'brilliant'">!!</span>
+          <span *ngSwitchCase="'great'">!</span>
+          <span *ngSwitchCase="'best'">★</span>
+          <span *ngSwitchCase="'good'">✓</span>
+          <span *ngSwitchCase="'inaccuracy'">?!</span>
+          <span *ngSwitchCase="'mistake'">?</span>
+          <span *ngSwitchCase="'blunder'">??</span>
+        </ng-container>
+      </span>
+      <span class="label">{{ getStatusLabel(data.status) }}</span>
+    </div>
+
+    <div class="quoted-message">
+      "{{ data.messageText }}"
+    </div>
+
+    <div class="explanation-section">
+      <h4>Dlaczego taka ocena?</h4>
+      <p>{{ data.explanation }}</p>
+    </div>
+
+    <div class="tips-section">
+      <h4>Sugestia</h4>
+      <p *ngIf="['brilliant', 'great', 'best', 'good'].includes(data.status)">
+        Świetnie radzisz sobie z komunikacją! Kontynuuj w ten sposób, skupiając się na empatii.
+      </p>
+      <p *ngIf="['inaccuracy', 'mistake', 'blunder'].includes(data.status)">
+        Spróbuj w przyszłości użyć komunikatu "Ja" zamiast "Ty", aby uniknąć defensywności u partnera.
+      </p>
+    </div>
+  </div>
+</div>

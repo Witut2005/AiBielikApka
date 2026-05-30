@@ -1,0 +1,36 @@
+<div class="container">
+  <h1>Opisz swoją sytuację</h1>
+  <p class="subtitle">Podziel się szczegółami, abyśmy mogli lepiej Cię zrozumieć.</p>
+
+  <form [formGroup]="contextForm" (ngSubmit)="onSubmit()" class="context-form">
+    <div class="form-group">
+      <label for="relationshipContext">Kontekst Waszej relacji</label>
+      <textarea
+        id="relationshipContext"
+        formControlName="relationshipContext"
+        placeholder="Opisz jak długo jesteście razem, jakie są Wasze role, co jest dla Was ważne..."
+        rows="5"
+      ></textarea>
+      <div *ngIf="contextForm.get('relationshipContext')?.touched && contextForm.get('relationshipContext')?.invalid" class="error">
+        Proszę opisać kontekst (minimum 10 znaków).
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="currentProblem">Aktualny problem / Sytuacja</label>
+      <textarea
+        id="currentProblem"
+        formControlName="currentProblem"
+        placeholder="Co się wydarzyło? Co Cię niepokoi? Jaki jest główny punkt sporu?"
+        rows="5"
+      ></textarea>
+      <div *ngIf="contextForm.get('currentProblem')?.touched && contextForm.get('currentProblem')?.invalid" class="error">
+        Proszę opisać problem (minimum 10 znaków).
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="contextForm.invalid" class="submit-button">
+      Przejdź dalej
+    </button>
+  </form>
+</div>
