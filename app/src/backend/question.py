@@ -14,6 +14,10 @@ BIELIK_API_URL = os.getenv(
 BIELIK_MODEL = os.getenv("BIELIK_MODEL", "bielik_11b")
 DEFAULT_TEMPERATURE = float(os.getenv("BIELIK_TEMPERATURE", "0.7"))
 DEFAULT_MAX_TOKENS = int(os.getenv("BIELIK_MAX_TOKENS", "1024"))
+SYSTEM_PROMPT_TEMPLATE = (
+	"Oceniasz wiadomosc w kontekscie rozwiazywania problemow z moim partnerem. "
+	"Odpowiadaj empatycznie, rzeczowo i skup sie na konstruktywnych krokach."
+)
 
 
 def _load_api_key() -> str:
@@ -30,7 +34,11 @@ def _load_api_key() -> str:
 	return key
 
 
-def _call_bielik(prompt: str) -> str:
+def _call_bielik(prompt: str, person_description: str) -> str:
+	clean_description = person_description.strip() or "brak opisu osoby"
+	system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
+		person_description=clean_description,
+	)
 	response = requests.post(
 		BIELIK_API_URL,
 		headers={
@@ -39,7 +47,10 @@ def _call_bielik(prompt: str) -> str:
 		},
 		json={
 			"model": BIELIK_MODEL,
-			"messages": [{"role": "user", "content": prompt}],
+			"messages": [
+				{"role": "system", "content": system_prompt},
+				{"role": "user", "content": prompt},
+			],
 			"temperature": DEFAULT_TEMPERATURE,
 			"max_tokens": DEFAULT_MAX_TOKENS,
 		},
@@ -51,12 +62,18 @@ def _call_bielik(prompt: str) -> str:
 
 def _build_parser() -> argparse.ArgumentParser:
 	parser = argparse.ArgumentParser(
-		description="Send a prompt to Bielik without a system prompt.",
+		description="Send a prompt to Bielik with a partner-problem system prompt.",
 	)
 	parser.add_argument(
 		"prompt",
 		nargs="+",
 		help="Prompt to send. Use quotes for multi-line or spaced prompts.",
+	)
+	parser.add_argument(
+		"-d",
+		"--person-description",
+		default="",
+		help="Opis osoby do uwzglednienia w system prompt.",
 	)
 	return parser
 
@@ -66,18 +83,19 @@ def main() -> int:
 	args = parser.parse_args()
 
 	prompt = " ".join(args.prompt).strip()
+	person_description = args.person_description
 	if not prompt:
 		print("Error: empty prompt.", file=sys.stderr)
 		return 1
 
 	try:
-		answer = _call_bielik(prompt)
+		answer = _call_bielik(prompt, person_description)
 	except Exception as exc:
 		print(f"Error: {exc}", file=sys.stderr)
 		return 1
 
 	print(answer)
-	return answer
+	return 0
 
 
 if __name__ == "__main__":
