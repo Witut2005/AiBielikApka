@@ -1,14 +1,16 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, ViewChild, ElementRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AnalysisComponent, AnalysisData } from './analysis/analysis';
 import { AngerChartComponent } from './anger-chart/anger-chart';
+import { AnalysisService, AnalysisResult } from './analysis.service';
 
 interface Message {
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
   status?: 'brilliant' | 'great' | 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder';
+  analysis?: AnalysisResult;
 }
 
 @Component({
@@ -19,8 +21,13 @@ interface Message {
   styleUrl: './chat.css'
 })
 export class ChatComponent {
+  private analysisService = inject(AnalysisService);
+  
+  @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
+
   messages = signal<Message[]>([]);
-  angerLevels = signal<number[]>([50]); // Początkowy poziom wkurzenia
+  angerLevels = signal<number[]>([50]); // Początkowy poziom wkurzenia partnera (B)
+  lastAnalysis = signal<AnalysisResult | null>(null);
 
   newMessage = '';
   selectedAnalysis = signal<AnalysisData | null>(null);
@@ -32,6 +39,20 @@ export class ChatComponent {
 
   constructor() {
     console.log('ChatComponent initialized');
+    
+    // Automatyczne przewijanie przy zmianie wiadomości
+    effect(() => {
+      this.messages(); // Subskrypcja na sygnał
+      this.scrollToBottom();
+    });
+  }
+
+  private scrollToBottom(): void {
+    setTimeout(() => {
+      if (this.scrollContainer) {
+        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+      }
+    }, 100);
   }
 
   private getMockStatus(): Message['status'] {
@@ -58,7 +79,8 @@ export class ChatComponent {
       this.selectedAnalysis.set({
         status: msg.status,
         messageText: msg.text,
-        explanation: this.getMockExplanation(msg.status, msg.text)
+        explanation: msg.analysis?.summary || this.getMockExplanation(msg.status, msg.text),
+        signals: msg.sender === 'user' ? msg.analysis?.signals_a : msg.analysis?.signals_b
       });
       console.log('selectedAnalysis signal state:', this.selectedAnalysis());
     } else {
@@ -69,28 +91,41 @@ export class ChatComponent {
   sendMessage() {
     if (this.newMessage.trim()) {
       const sender = this.nextSender();
+      const text = this.newMessage;
+      
       const msg: Message = {
-        text: this.newMessage,
+        text: text,
         sender: sender,
         timestamp: new Date(),
         status: sender === 'user' ? this.getMockStatus() : undefined
       };
       
       this.messages.update(msgs => [...msgs, msg]);
-      
-      // Jeśli to odpowiedź partnera (ai), aktualizujemy wykres wkurzenia
-      if (sender === 'ai') {
-        const currentAnger = this.angerLevels()[this.angerLevels().length - 1];
-        // Losowa zmiana dla demonstracji: -20 do +20, w zakresie 0-100
-        const change = Math.floor(Math.random() * 41) - 20;
-        const newAnger = Math.max(0, Math.min(100, currentAnger + change));
-        this.angerLevels.update(levels => [...levels, newAnger]);
-      }
-
       this.newMessage = '';
+
+      // Wywołanie analizy TYLKO po wiadomościach drugiej strony (ai)
+      if (sender === 'ai') {
+        this.analysisService.analyzeMessage(text, this.messages()).subscribe(result => {
+          console.log('Otrzymano analizę:', result);
+          this.lastAnalysis.set(result);
+          
+          // Aktualizujemy ostatnią wiadomość o wynik analizy
+          this.messages.update(msgs => {
+            const lastMsg = msgs[msgs.length - 1];
+            if (lastMsg && lastMsg.text === text) {
+              lastMsg.analysis = result;
+            }
+            return [...msgs];
+          });
+
+          // Aktualizujemy wykres wkurzenia partnera (anger_level_b)
+          this.angerLevels.update(levels => [...levels, result.anger_level_b]);
+        });
+      }
       
       // Przełączamy nadawcę na następną wiadomość
       this.nextSender.set(sender === 'user' ? 'ai' : 'user');
     }
   }
 }
+

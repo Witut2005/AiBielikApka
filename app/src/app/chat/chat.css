@@ -29,10 +29,14 @@
 }
 
 .chat-header {
-  padding: 1.5rem;
+  padding: 1rem;
   background: #fff;
   border-bottom: 1px solid #eee;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .chat-header h2 {
@@ -40,6 +44,19 @@
   color: #2c3e50;
   font-size: 1.25rem;
 }
+
+.tension-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tension-badge.low { background: #d4edda; color: #155724; }
+.tension-badge.medium { background: #fff3cd; color: #856404; }
+.tension-badge.high { background: #f8d7da; color: #721c24; }
+
 
 .messages-container {
   flex: 1;

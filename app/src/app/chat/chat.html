@@ -5,10 +5,13 @@
 
   <div class="chat-container">
     <div class="chat-header">
-      <h2>Rozmowa z AiBielik</h2>
+      <h2>Rozmowa z Partnerem</h2>
+      <div class="tension-badge" *ngIf="lastAnalysis() as analysis" [ngClass]="analysis.overall_tension">
+        Napięcie: {{ analysis.overall_tension }}
+      </div>
     </div>
 
-    <div class="messages-container">
+    <div class="messages-container" #scrollContainer>
       <div *ngFor="let msg of messages()" [ngClass]="['message-wrapper', msg.sender]">
         <div 
           [ngClass]="['message', msg.sender]" 

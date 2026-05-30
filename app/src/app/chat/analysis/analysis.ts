@@ -5,6 +5,7 @@ export interface AnalysisData {
   status: 'brilliant' | 'great' | 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder';
   messageText: string;
   explanation: string;
+  signals?: string[];
 }
 
 @Component({

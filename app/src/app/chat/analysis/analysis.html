@@ -29,6 +29,13 @@
       <p>{{ data.explanation }}</p>
     </div>
 
+    <div class="signals-section" *ngIf="data.signals && data.signals.length > 0">
+      <h4>Wykryte sygnały</h4>
+      <div class="signals-list">
+        <span class="signal-tag" *ngFor="let signal of data.signals">{{ signal }}</span>
+      </div>
+    </div>
+
     <div class="tips-section">
       <h4>Sugestia</h4>
       <p *ngIf="['brilliant', 'great', 'best', 'good'].includes(data.status)">

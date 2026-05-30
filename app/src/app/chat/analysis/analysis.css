@@ -99,8 +99,25 @@ p {
   color: #2c3e50;
 }
 
-.explanation-section, .tips-section {
+.explanation-section, .tips-section, .signals-section {
   background: #f8f9fa;
   padding: 1rem;
   border-radius: 8px;
 }
+
+.signals-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.signal-tag {
+  background: #e9ecef;
+  color: #495057;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  border: 1px solid #dee2e6;
+}
+
